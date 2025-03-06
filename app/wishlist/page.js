@@ -1,55 +1,43 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import supabase from "@/supabase";
 
-export default function WishlistPage() {
+export default function Wishlist() {
   const [wishlist, setWishlist] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  // 📌 Načtení wishlistu
+  // 📌 Načítání wishlistu
   useEffect(() => {
     const fetchWishlist = async () => {
-      const { data, error } = await supabase.from("wishlist").select("*");
-      if (error) {
-        console.error("Chyba při načítání wishlistu:", error);
-      } else {
-        setWishlist(data);
-      }
-      setLoading(false);
+      const { data } = await supabase.from("wishlist").select("*");
+      setWishlist(data);
     };
 
     fetchWishlist();
   }, []);
 
-  // 📌 Funkce pro odebrání karty z wishlistu
-  const handleRemoveFromWishlist = async (id) => {
-    const { error } = await supabase.from("wishlist").delete().match({ id });
-
-    if (error) {
-      console.error("Chyba při odstraňování z wishlistu:", error);
-    } else {
-      setWishlist((prev) => prev.filter((card) => card.id !== id));
-      alert("Karta byla odebrána z wishlistu.");
-    }
+  // 📌 Odebrání karty z wishlistu
+  const handleRemoveFromWishlist = async (card) => {
+    await supabase.from("wishlist").delete().eq("id", card.id);
+    setWishlist((prev) => prev.filter((c) => c.id !== card.id));
   };
 
   return (
     <div style={{ padding: "20px" }}>
       <h1>📜 Můj Pokémon Wishlist</h1>
-      {loading && <p>⏳ Načítám wishlist...</p>}
-      {!loading && wishlist.length === 0 && <p>😢 Wishlist je prázdný.</p>}
-
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-        {wishlist.map((card) => (
-          <div key={card.id} style={{ border: "1px solid black", padding: "10px", textAlign: "center" }}>
-            <img src={card.image} alt={card.name} width="100" />
-            <p>{card.name}</p>
-            <button onClick={() => handleRemoveFromWishlist(card.id)} style={{ backgroundColor: "red", color: "white" }}>
-              ❌ Odebrat z wishlistu
-            </button>
-          </div>
-        ))}
+      <div style={{ display: "flex", flexWrap: "wrap", marginTop: "20px" }}>
+        {wishlist.length === 0 ? (
+          <p>😢 Wishlist je prázdný.</p>
+        ) : (
+          wishlist.map((card) => (
+            <div key={card.id} style={{ margin: "10px", textAlign: "center" }}>
+              <img src={card.image} alt={card.name} width="150" />
+              <p>{card.name}</p>
+              <p>{card.set} | {card.number}</p> {/* Upravené zobrazení */}
+              <button onClick={() => handleRemoveFromWishlist(card)}>❌ Odebrat z wishlistu</button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

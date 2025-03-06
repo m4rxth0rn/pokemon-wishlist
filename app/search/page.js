@@ -8,8 +8,15 @@ export default function Search() {
   const [searchTerm, setSearchTerm] = useState("");
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [wishlist, setWishlist] = useState(new Set());
 
-  // 📌 Funkce pro hledání karet
+  // 📌 Načíst wishlist z databáze
+  const fetchWishlist = async () => {
+    const { data } = await supabase.from("wishlist").select("id");
+    setWishlist(new Set(data.map((card) => card.id)));
+  };
+
+  // 📌 Hledání karet
   const handleSearch = async () => {
     if (!searchTerm) return;
     setLoading(true);
@@ -26,24 +33,41 @@ export default function Search() {
     setLoading(false);
   };
 
-  // 📌 Funkce na ENTER pro spuštění hledání
-  const handleKeyPress = (event) => {
-    if (event.key === "Enter") {
-      handleSearch();
+  // 📌 Přidání do wishlistu
+  const handleAddToWishlist = async (card) => {
+    const { error } = await supabase.from("wishlist").insert([
+      {
+        id: card.id,
+        name: card.name,
+        image: card.images.small,
+        number: `${card.number}/${card.set.printedTotal}`, // Upravíme formát
+        set: card.set.name,
+      },
+    ]);
+
+    if (!error) {
+      setWishlist(new Set([...wishlist, card.id]));
     }
+  };
+
+  // 📌 Odebrání z wishlistu
+  const handleRemoveFromWishlist = async (card) => {
+    await supabase.from("wishlist").delete().eq("id", card.id);
+    const newWishlist = new Set(wishlist);
+    newWishlist.delete(card.id);
+    setWishlist(newWishlist);
   };
 
   return (
     <div style={{ padding: "20px" }}>
       <h1>🔍 Hledej Pokémon karty</h1>
 
-      {/* 📌 Odebrali jsme tlačítko a hledáme ENTERem */}
       <input
         type="text"
         placeholder="Zadej jméno karty..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        onKeyDown={handleKeyPress} // 📌 Spustí hledání po stisknutí ENTER
+        onKeyPress={(e) => e.key === "Enter" && handleSearch()} // Hledání stisknutím Enter
       />
 
       <h2>Výsledky:</h2>
@@ -53,9 +77,15 @@ export default function Search() {
           <div key={card.id} style={{ margin: "10px", textAlign: "center" }}>
             <img src={card.images.small} alt={card.name} width="150" />
             <p>{card.name}</p>
-            <button onClick={() => handleAddToWishlist(card)}>
-              Přidat do wishlistu
-            </button>
+            <p>{card.set.name} | {card.number}/{card.set.printedTotal}</p> {/* Upravené zobrazení */}
+            {wishlist.has(card.id) ? (
+              <>
+                <button onClick={() => handleRemoveFromWishlist(card)}>❌ Odebrat z wishlistu</button>
+                <p>✅ Karta je na wishlistu</p>
+              </>
+            ) : (
+              <button onClick={() => handleAddToWishlist(card)}>➕ Přidat do wishlistu</button>
+            )}
           </div>
         ))}
       </div>
