@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import supabase from "@/supabase";
 
@@ -10,11 +10,30 @@ export default function Search() {
   const [loading, setLoading] = useState(false);
   const [wishlist, setWishlist] = useState(new Set());
 
-  // 📌 Načíst wishlist z databáze
+  // 📌 Funkce pro načtení wishlistu
   const fetchWishlist = async () => {
     const { data } = await supabase.from("wishlist").select("id");
     setWishlist(new Set(data.map((card) => card.id)));
   };
+
+  // 📌 Načítáme wishlist při startu a přidáváme realtime listener
+  useEffect(() => {
+    fetchWishlist();
+
+    // 🛠️ Přidání realtime listeneru
+    const subscription = supabase
+      .channel("wishlist")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "wishlist" },
+        () => fetchWishlist() // ✅ Automaticky znovu načteme wishlist
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription); // ✅ Odpojíme listener při opuštění stránky
+    };
+  }, []);
 
   // 📌 Hledání karet
   const handleSearch = async () => {
@@ -33,29 +52,27 @@ export default function Search() {
     setLoading(false);
   };
 
-  // 📌 Přidání do wishlistu
+  // 📌 Přidání karty do wishlistu
   const handleAddToWishlist = async (card) => {
     const { error } = await supabase.from("wishlist").insert([
       {
         id: card.id,
         name: card.name,
         image: card.images.small,
-        number: `${card.number}/${card.set.printedTotal}`, // Upravíme formát
+        number: `${card.number}/${card.set.printedTotal}`,
         set: card.set.name,
       },
     ]);
 
     if (!error) {
-      setWishlist(new Set([...wishlist, card.id]));
+      fetchWishlist(); // ✅ Aktualizace wishlistu
     }
   };
 
-  // 📌 Odebrání z wishlistu
+  // 📌 Odebrání karty z wishlistu
   const handleRemoveFromWishlist = async (card) => {
     await supabase.from("wishlist").delete().eq("id", card.id);
-    const newWishlist = new Set(wishlist);
-    newWishlist.delete(card.id);
-    setWishlist(newWishlist);
+    fetchWishlist(); // ✅ Aktualizace wishlistu
   };
 
   return (
@@ -67,7 +84,7 @@ export default function Search() {
         placeholder="Zadej jméno karty..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        onKeyPress={(e) => e.key === "Enter" && handleSearch()} // Hledání stisknutím Enter
+        onKeyDown={(e) => e.key === "Enter" && handleSearch()} // ✅ Hledání Enterem
       />
 
       <h2>Výsledky:</h2>
@@ -77,7 +94,8 @@ export default function Search() {
           <div key={card.id} style={{ margin: "10px", textAlign: "center" }}>
             <img src={card.images.small} alt={card.name} width="150" />
             <p>{card.name}</p>
-            <p>{card.set.name} | {card.number}/{card.set.printedTotal}</p> {/* Upravené zobrazení */}
+            <p>{card.set.name} | {card.number}/{card.set.printedTotal}</p> {/* ✅ Správný formát */}
+
             {wishlist.has(card.id) ? (
               <>
                 <button onClick={() => handleRemoveFromWishlist(card)}>❌ Odebrat z wishlistu</button>
