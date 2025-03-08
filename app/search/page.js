@@ -9,11 +9,12 @@ export default function Search() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [wishlist, setWishlist] = useState(new Set());
+  const [sortOrder, setSortOrder] = useState("Desc");
 
   // 📌 Načtení wishlistu
   const fetchWishlist = async () => {
     const { data } = await supabase.from("wishlist").select("id");
-    setWishlist(new Set(data.map((card) => card.id)));
+    setWishlist(new Set(data?.map((card) => card.id) || []));
   };
 
   useEffect(() => {
@@ -26,65 +27,23 @@ export default function Search() {
         () => fetchWishlist()
       )
       .subscribe();
+
     return () => {
       supabase.removeChannel(subscription);
     };
   }, []);
 
-  // 📌 Definované pořadí setů
-  const eraOrder = [
-    "Base Set", "Jungle", "Fossil", "Team Rocket", "Gym Heroes", "Gym Challenge",
-    "Neo Genesis", "Neo Discovery", "Neo Revelation", "Neo Destiny",
-    "Expedition Base Set", "Aquapolis", "Skyridge",
-    "EX Ruby & Sapphire", "EX Sandstorm", "EX Dragon", "EX Team Magma vs Team Aqua",
-    "EX Hidden Legends", "EX FireRed & LeafGreen", "EX Team Rocket Returns",
-    "EX Deoxys", "EX Emerald", "EX Unseen Forces", "EX Delta Species",
-    "EX Legend Maker", "EX Holon Phantoms", "EX Crystal Guardians",
-    "EX Dragon Frontiers", "EX Power Keepers",
-    "Diamond & Pearl", "Mysterious Treasures", "Secret Wonders", "Great Encounters",
-    "Majestic Dawn", "Legends Awakened", "Stormfront",
-    "Platinum", "Rising Rivals", "Supreme Victors", "Arceus",
-    "HeartGold & SoulSilver", "Unleashed", "Undaunted", "Triumphant",
-    "Call of Legends",
-    "Black & White", "Emerging Powers", "Noble Victories", "Next Destinies",
-    "Dark Explorers", "Dragons Exalted", "Boundaries Crossed", "Plasma Storm",
-    "Plasma Freeze", "Plasma Blast", "Legendary Treasures",
-    "XY", "Flashfire", "Furious Fists", "Phantom Forces", "Primal Clash",
-    "Roaring Skies", "Ancient Origins", "BREAKthrough", "BREAKpoint",
-    "Generations", "Fates Collide", "Steam Siege", "Evolutions",
-    "Sun & Moon", "Guardians Rising", "Burning Shadows", "Crimson Invasion",
-    "Ultra Prism", "Forbidden Light", "Celestial Storm", "Lost Thunder",
-    "Team Up", "Detective Pikachu", "Unbroken Bonds", "Unified Minds",
-    "Hidden Fates", "Cosmic Eclipse",
-    "Sword & Shield", "Rebel Clash", "Darkness Ablaze", "Champion's Path",
-    "Vivid Voltage", "Shining Fates", "Battle Styles", "Chilling Reign",
-    "Evolving Skies", "Celebrations", "Fusion Strike", "Brilliant Stars",
-    "Astral Radiance", "Pokémon GO", "Lost Origin", "Silver Tempest",
-    "Scarlet & Violet", "Paldea Evolved", "Obsidian Flames", "Paradox Rift",
-    "Temporal Forces", "Twilight Masquerade"
-  ];
-
-  // 📌 Oprava názvu setů a správné řazení
-  const normalizeSetName = (setName) => {
-    if (setName.includes("Base Set")) return "Base Set"; // ✅ Oprava všech variant názvu Base Set
-    return setName.replace("Black Star Promos", "").trim();
+  // 📌 Funkce pro konverzi data na správný formát
+  const parseReleaseDate = (dateString) => {
+    return dateString ? new Date(dateString) : new Date(0);
   };
 
-  const sortCardsBySetAge = (cards) => {
+  // 📌 Řazení karet podle data vydání setu
+  const sortCardsByReleaseDate = (cards, order) => {
     return [...cards].sort((a, b) => {
-      let setA = normalizeSetName(a.set.name);
-      let setB = normalizeSetName(b.set.name);
-
-      let indexA = eraOrder.indexOf(setA);
-      let indexB = eraOrder.indexOf(setB);
-
-      if (a.set.series.includes("Black Star Promos")) return 1; // ✅ Proma na konec éry
-      if (b.set.series.includes("Black Star Promos")) return -1;
-
-      if (indexA === -1) return 1;
-      if (indexB === -1) return -1;
-
-      return indexA - indexB;
+      const dateA = parseReleaseDate(a.set.releaseDate);
+      const dateB = parseReleaseDate(b.set.releaseDate);
+      return order === "Asc" ? dateA - dateB : dateB - dateA;
     });
   };
 
@@ -94,8 +53,10 @@ export default function Search() {
     setLoading(true);
 
     try {
-      const res = await axios.get(`https://api.pokemontcg.io/v2/cards?q=name:"${searchTerm}"`);
-      const sortedCards = sortCardsBySetAge(res.data.data || []);
+      const res = await axios.get(
+        `https://api.pokemontcg.io/v2/cards?q=name:"${searchTerm}"`
+      );
+      const sortedCards = sortCardsByReleaseDate(res.data.data || [], sortOrder);
       setCards(sortedCards);
     } catch (error) {
       console.error("Chyba při načítání karet:", error);
@@ -104,37 +65,76 @@ export default function Search() {
     setLoading(false);
   };
 
+  // 📌 Automatické hledání při změně řazení
+  useEffect(() => {
+    if (searchTerm) {
+      handleSearch();
+    }
+  }, [sortOrder]);
+
+  // 📌 Přidání karty do wishlistu
+  const handleAddToWishlist = async (card) => {
+    const { error } = await supabase.from("wishlist").insert([
+      {
+        id: card.id,
+        name: card.name,
+        image: card.images.small,
+        number: `${card.number}/${card.set.printedTotal}`,
+        set: card.set.name,
+      },
+    ]);
+
+    if (!error) {
+      fetchWishlist(); // ✅ Aktualizace wishlistu
+    }
+  };
+
+  // 📌 Odebrání karty z wishlistu
+  const handleRemoveFromWishlist = async (card) => {
+    await supabase.from("wishlist").delete().eq("id", card.id);
+    fetchWishlist(); // ✅ Aktualizace wishlistu
+  };
+
   return (
     <div style={{ padding: "20px" }}>
       <h1>🔍 Hledej Pokémon karty</h1>
 
-      <input
-        type="text"
-        placeholder="Zadej jméno karty..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-      />
+      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <input
+          type="text"
+          placeholder="Zadej jméno karty..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+        />
+
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+        >
+          <option value="Desc">🔽 Nejnovější první</option>
+          <option value="Asc">🔼 Nejstarší první</option>
+        </select>
+      </div>
 
       <h2>Výsledky:</h2>
       {loading && <p>⏳ Načítám...</p>}
       {!loading && cards.length === 0 && <p>😢 Nic nebylo nalezeno.</p>}
 
-      <div style={{ display: "flex", flexWrap: "wrap", marginTop: "20px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "10px" }}>
         {!loading &&
           cards.map((card) => (
-            <div key={card.id} style={{ margin: "10px", textAlign: "center" }}>
+            <div key={card.id} style={{ textAlign: "center" }}>
               <img src={card.images.small} alt={card.name} width="150" />
-              <p>{card.name}</p>
               <p>{card.set.name} | {card.number}/{card.set.printedTotal}</p>
 
               {wishlist.has(card.id) ? (
                 <>
-                  <button onClick={() => handleRemoveFromWishlist(card)}>❌ Odebrat z wishlistu</button>
                   <p>✅ Karta je na wishlistu</p>
+                  <button onClick={() => handleRemoveFromWishlist(card)}>❌ Odebrat</button>
                 </>
               ) : (
-                <button onClick={() => handleAddToWishlist(card)}>➕ Přidat do wishlistu</button>
+                <button onClick={() => handleAddToWishlist(card)}>➕ Přidat</button>
               )}
             </div>
           ))}

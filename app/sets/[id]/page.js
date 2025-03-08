@@ -11,25 +11,33 @@ export default function SetPage() {
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState(new Set());
 
-  // 📌 Načteme wishlist pro kontrolu, které karty jsou už přidané
+  // 📌 Načtení wishlistu pro kontrolu, které karty jsou už přidané
   const fetchWishlist = async () => {
     const { data } = await supabase.from("wishlist").select("id");
-    setWishlist(new Set(data.map((card) => card.id)));
+    setWishlist(new Set(data?.map((card) => card.id) || []));
   };
 
-  // 📌 Načteme karty setu
+  // 📌 Načtení karet setu
   const fetchCards = async () => {
     try {
       const res = await axios.get(`https://api.pokemontcg.io/v2/cards?q=set.id:${id}`);
-      setCards(res.data.data || []);
+
+      // 📌 Opravené řazení podle čísla karty (včetně písmen)
+      const sortedCards = res.data.data.sort((a, b) => {
+        const numA = parseInt(a.number.replace(/\D/g, "")) || 0; // Odstranění písmen
+        const numB = parseInt(b.number.replace(/\D/g, "")) || 0;
+        return numA - numB;
+      });
+
+      setCards(sortedCards);
     } catch (error) {
       console.error("Chyba při načítání karet:", error);
     } finally {
-      setLoading(false); // ✅ Načítání dokončeno
+      setLoading(false);
     }
   };
 
-  // 📌 Načítáme wishlist i karty při prvním načtení a přidáváme realtime listener
+  // 📌 Načtení wishlistu a karet při prvním načtení + realtime listener
   useEffect(() => {
     fetchWishlist();
     fetchCards();
@@ -78,16 +86,13 @@ export default function SetPage() {
       {/* ✅ Zobrazení karet, pokud jsou načtené */}
       {!loading && cards.length === 0 && <p>😢 Žádné karty nenalezeny.</p>}
 
-      <div style={{ display: "flex", flexWrap: "wrap", marginTop: "20px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "10px", marginTop: "20px" }}>
         {!loading &&
           cards.map((card) => (
-            <div key={card.id} style={{ margin: "10px", textAlign: "center" }}>
+            <div key={card.id} style={{ textAlign: "center" }}>
               <img src={card.images.small} alt={card.name} width="150" />
               <p>{card.name}</p>
-              <p>
-                {card.set.name} | {card.number}/{card.set.printedTotal}
-              </p>{" "}
-              {/* ✅ Správný formát */}
+              <p>{card.set.name} | {card.number}/{card.set.printedTotal}</p> {/* ✅ Správný formát */}
 
               {wishlist.has(card.id) ? (
                 <>
