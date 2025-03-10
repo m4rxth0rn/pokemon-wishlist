@@ -3,13 +3,16 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import supabase from "@/supabase";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Search() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || ""); // 📌 Načtení z URL
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [wishlist, setWishlist] = useState(new Set());
-  const [sortOrder, setSortOrder] = useState("Desc");
+  const [sortOrder, setSortOrder] = useState(searchParams.get("sort") || "Desc"); // 📌 Načtení řazení z URL
 
   // 📌 Načtení wishlistu
   const fetchWishlist = async () => {
@@ -33,28 +36,42 @@ export default function Search() {
     };
   }, []);
 
-  // 📌 Funkce pro konverzi data na správný formát
-  const parseReleaseDate = (dateString) => {
-    return dateString ? new Date(dateString) : new Date(0);
+  // 📌 Uložení vyhledávání do URL
+  const updateSearchParams = (key, value) => {
+    const newParams = new URLSearchParams(window.location.search);
+    if (value) {
+      newParams.set(key, value);
+    } else {
+      newParams.delete(key);
+    }
+    router.replace(`?${newParams.toString()}`);
   };
 
-  // 📌 Řazení karet podle data vydání setu
+  // 📌 Normalizace hledání (odstranění mezer a velkých písmen)
+  const normalizeText = (text) => text.toLowerCase().replace(/\s+/g, "");
+
+  // 📌 Řazení karet (sety podle release date, karty v setu podle čísla)
   const sortCardsByReleaseDate = (cards, order) => {
     return [...cards].sort((a, b) => {
-      const dateA = parseReleaseDate(a.set.releaseDate);
-      const dateB = parseReleaseDate(b.set.releaseDate);
+      const dateA = a.set.releaseDate ? new Date(a.set.releaseDate) : new Date(0);
+      const dateB = b.set.releaseDate ? new Date(b.set.releaseDate) : new Date(0);
+
+      if (dateA - dateB === 0) {
+        return parseInt(a.number) - parseInt(b.number); // 📌 Pokud jsou ze stejného setu, řadíme podle čísla
+      }
       return order === "Asc" ? dateA - dateB : dateB - dateA;
     });
   };
 
   // 📌 Hledání karet
   const handleSearch = async () => {
-    if (!searchTerm) return;
+    if (!searchTerm.trim()) return;
     setLoading(true);
+    updateSearchParams("q", searchTerm.trim()); // ✅ Uložit hledání do URL
 
     try {
       const res = await axios.get(
-        `https://api.pokemontcg.io/v2/cards?q=name:"${searchTerm}"`
+        `https://api.pokemontcg.io/v2/cards?q=name:"${searchTerm.trim()}"`
       );
       const sortedCards = sortCardsByReleaseDate(res.data.data || [], sortOrder);
       setCards(sortedCards);
@@ -72,29 +89,6 @@ export default function Search() {
     }
   }, [sortOrder]);
 
-  // 📌 Přidání karty do wishlistu
-  const handleAddToWishlist = async (card) => {
-    const { error } = await supabase.from("wishlist").insert([
-      {
-        id: card.id,
-        name: card.name,
-        image: card.images.small,
-        number: `${card.number}/${card.set.printedTotal}`,
-        set: card.set.name,
-      },
-    ]);
-
-    if (!error) {
-      fetchWishlist(); // ✅ Aktualizace wishlistu
-    }
-  };
-
-  // 📌 Odebrání karty z wishlistu
-  const handleRemoveFromWishlist = async (card) => {
-    await supabase.from("wishlist").delete().eq("id", card.id);
-    fetchWishlist(); // ✅ Aktualizace wishlistu
-  };
-
   return (
     <div style={{ padding: "20px" }}>
       <h1>🔍 Hledej Pokémon karty</h1>
@@ -110,7 +104,10 @@ export default function Search() {
 
         <select
           value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
+          onChange={(e) => {
+            setSortOrder(e.target.value);
+            updateSearchParams("sort", e.target.value); // ✅ Uložit řazení do URL
+          }}
         >
           <option value="Desc">🔽 Nejnovější první</option>
           <option value="Asc">🔼 Nejstarší první</option>
