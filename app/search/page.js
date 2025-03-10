@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import supabase from "@/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 
-function SearchComponent() {
+export default function Search() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
@@ -14,21 +14,11 @@ function SearchComponent() {
   const [wishlist, setWishlist] = useState(new Set());
   const [sortOrder, setSortOrder] = useState(searchParams.get("sort") || "Desc");
 
-  // 📌 Načtení wishlistu
-  const fetchWishlist = async () => {
-    const { data } = await supabase.from("wishlist").select("id");
-    setWishlist(new Set(data?.map((card) => card.id) || []));
-  };
-
   useEffect(() => {
     fetchWishlist();
     const subscription = supabase
       .channel("wishlist")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "wishlist" },
-        () => fetchWishlist()
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "wishlist" }, fetchWishlist)
       .subscribe();
 
     return () => {
@@ -36,7 +26,11 @@ function SearchComponent() {
     };
   }, []);
 
-  // 📌 Uložení vyhledávání do URL
+  const fetchWishlist = async () => {
+    const { data } = await supabase.from("wishlist").select("id");
+    setWishlist(new Set(data?.map((card) => card.id) || []));
+  };
+
   const updateSearchParams = (key, value) => {
     const newParams = new URLSearchParams(window.location.search);
     if (value) {
@@ -47,32 +41,26 @@ function SearchComponent() {
     router.replace(`?${newParams.toString()}`);
   };
 
-  // 📌 Normalizace hledání (odstranění mezer a velkých písmen)
   const normalizeText = (text) => text.toLowerCase().replace(/\s+/g, "");
 
-  // 📌 Řazení karet
   const sortCardsByReleaseDate = (cards, order) => {
     return [...cards].sort((a, b) => {
       const dateA = a.set.releaseDate ? new Date(a.set.releaseDate) : new Date(0);
       const dateB = b.set.releaseDate ? new Date(b.set.releaseDate) : new Date(0);
-
       if (dateA - dateB === 0) {
-        return parseInt(a.number) - parseInt(b.number); // 📌 Pokud jsou ze stejného setu, řadíme podle čísla
+        return parseInt(a.number) - parseInt(b.number);
       }
       return order === "Asc" ? dateA - dateB : dateB - dateA;
     });
   };
 
-  // 📌 Hledání karet
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
     setLoading(true);
     updateSearchParams("q", searchTerm.trim());
 
     try {
-      const res = await axios.get(
-        `https://api.pokemontcg.io/v2/cards?q=name:"${searchTerm.trim()}"`
-      );
+      const res = await axios.get(`https://api.pokemontcg.io/v2/cards?q=name:"${searchTerm.trim()}"`);
       const sortedCards = sortCardsByReleaseDate(res.data.data || [], sortOrder);
       setCards(sortedCards);
     } catch (error) {
@@ -82,7 +70,6 @@ function SearchComponent() {
     setLoading(false);
   };
 
-  // 📌 Automatické hledání při změně řazení
   useEffect(() => {
     if (searchTerm) {
       handleSearch();
@@ -99,7 +86,7 @@ function SearchComponent() {
           placeholder="Zadej jméno karty..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          onKeyDown={(e) => (e.key === "Enter" || e.keyCode === 13) && handleSearch()} // ✅ Opravené pro mobilní prohlížeče
         />
 
         <select
@@ -137,14 +124,5 @@ function SearchComponent() {
           ))}
       </div>
     </div>
-  );
-}
-
-// ✅ Obalení komponenty do Suspense, aby `useSearchParams()` fungovalo správně
-export default function SearchPage() {
-  return (
-    <Suspense fallback={<p>⏳ Načítám stránku...</p>}>
-      <SearchComponent />
-    </Suspense>
   );
 }
