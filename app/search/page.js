@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import axios from "axios";
 import supabase from "@/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function Search() {
+function SearchComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || ""); // 📌 Načtení z URL
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [wishlist, setWishlist] = useState(new Set());
-  const [sortOrder, setSortOrder] = useState(searchParams.get("sort") || "Desc"); // 📌 Načtení řazení z URL
+  const [sortOrder, setSortOrder] = useState(searchParams.get("sort") || "Desc");
 
   // 📌 Načtení wishlistu
   const fetchWishlist = async () => {
@@ -50,7 +50,7 @@ export default function Search() {
   // 📌 Normalizace hledání (odstranění mezer a velkých písmen)
   const normalizeText = (text) => text.toLowerCase().replace(/\s+/g, "");
 
-  // 📌 Řazení karet (sety podle release date, karty v setu podle čísla)
+  // 📌 Řazení karet
   const sortCardsByReleaseDate = (cards, order) => {
     return [...cards].sort((a, b) => {
       const dateA = a.set.releaseDate ? new Date(a.set.releaseDate) : new Date(0);
@@ -67,7 +67,7 @@ export default function Search() {
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
     setLoading(true);
-    updateSearchParams("q", searchTerm.trim()); // ✅ Uložit hledání do URL
+    updateSearchParams("q", searchTerm.trim());
 
     try {
       const res = await axios.get(
@@ -106,7 +106,7 @@ export default function Search() {
           value={sortOrder}
           onChange={(e) => {
             setSortOrder(e.target.value);
-            updateSearchParams("sort", e.target.value); // ✅ Uložit řazení do URL
+            updateSearchParams("sort", e.target.value);
           }}
         >
           <option value="Desc">🔽 Nejnovější první</option>
@@ -137,5 +137,14 @@ export default function Search() {
           ))}
       </div>
     </div>
+  );
+}
+
+// ✅ Obalení komponenty do Suspense, aby `useSearchParams()` fungovalo správně
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<p>⏳ Načítám stránku...</p>}>
+      <SearchComponent />
+    </Suspense>
   );
 }
