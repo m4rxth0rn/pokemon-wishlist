@@ -1,11 +1,19 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import axios from "axios";
 import supabase from "@/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function Search() {
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<p>⏳ Načítám vyhledávání...</p>}>
+      <Search />
+    </Suspense>
+  );
+}
+
+function Search() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
@@ -31,38 +39,13 @@ export default function Search() {
     setWishlist(new Set(data?.map((card) => card.id) || []));
   };
 
-  const updateSearchParams = (key, value) => {
-    const newParams = new URLSearchParams(window.location.search);
-    if (value) {
-      newParams.set(key, value);
-    } else {
-      newParams.delete(key);
-    }
-    router.replace(`?${newParams.toString()}`);
-  };
-
-  const normalizeText = (text) => text.toLowerCase().replace(/\s+/g, "");
-
-  const sortCardsByReleaseDate = (cards, order) => {
-    return [...cards].sort((a, b) => {
-      const dateA = a.set.releaseDate ? new Date(a.set.releaseDate) : new Date(0);
-      const dateB = b.set.releaseDate ? new Date(b.set.releaseDate) : new Date(0);
-      if (dateA - dateB === 0) {
-        return parseInt(a.number) - parseInt(b.number);
-      }
-      return order === "Asc" ? dateA - dateB : dateB - dateA;
-    });
-  };
-
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
     setLoading(true);
-    updateSearchParams("q", searchTerm.trim());
 
     try {
       const res = await axios.get(`https://api.pokemontcg.io/v2/cards?q=name:"${searchTerm.trim()}"`);
-      const sortedCards = sortCardsByReleaseDate(res.data.data || [], sortOrder);
-      setCards(sortedCards);
+      setCards(res.data.data || []);
     } catch (error) {
       console.error("Chyba při načítání karet:", error);
     }
@@ -70,35 +53,18 @@ export default function Search() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    if (searchTerm) {
-      handleSearch();
-    }
-  }, [sortOrder]);
-
   return (
     <div style={{ padding: "20px" }}>
       <h1>🔍 Hledej Pokémon karty</h1>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
         <input
           type="text"
           placeholder="Zadej jméno karty..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => (e.key === "Enter" || e.keyCode === 13) && handleSearch()} // ✅ Opravené pro mobilní prohlížeče
         />
-
-        <select
-          value={sortOrder}
-          onChange={(e) => {
-            setSortOrder(e.target.value);
-            updateSearchParams("sort", e.target.value);
-          }}
-        >
-          <option value="Desc">🔽 Nejnovější první</option>
-          <option value="Asc">🔼 Nejstarší první</option>
-        </select>
+        <button onClick={handleSearch}>🔍 Hledat</button>
       </div>
 
       <h2>Výsledky:</h2>
@@ -115,10 +81,10 @@ export default function Search() {
               {wishlist.has(card.id) ? (
                 <>
                   <p>✅ Karta je na wishlistu</p>
-                  <button onClick={() => handleRemoveFromWishlist(card)}>❌ Odebrat</button>
+                  <button>❌ Odebrat</button>
                 </>
               ) : (
-                <button onClick={() => handleAddToWishlist(card)}>➕ Přidat</button>
+                <button>➕ Přidat</button>
               )}
             </div>
           ))}
