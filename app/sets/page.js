@@ -2,25 +2,23 @@
 
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function SetsPage() {
   const [sets, setSets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sortOption, setSortOption] = useState("newest"); // Výchozí řazení: od nejnovějšího po nejstarší
+  const [sortOption, setSortOption] = useState("newest");
+  const router = useRouter();
 
   useEffect(() => {
     const fetchSets = async () => {
       try {
         const res = await axios.get("https://api.pokemontcg.io/v2/sets");
-
-        // 📌 Uložíme všechny sety do objektu seskupeného podle série
         const groupedSets = res.data.data.reduce((acc, set) => {
           if (!acc[set.series]) acc[set.series] = [];
           acc[set.series].push(set);
           return acc;
         }, {});
-
         setSets(groupedSets);
       } catch (error) {
         console.error("Chyba při načítání setů:", error);
@@ -31,12 +29,9 @@ export default function SetsPage() {
     fetchSets();
   }, []);
 
-  // 📌 Funkce pro zajištění, že všechny sety mají správné datum
-  const parseReleaseDate = (set) => {
-    return set.releaseDate ? new Date(set.releaseDate) : new Date("1999-01-09"); // ✅ Pokud není datum, dáme defaultně Base Set
-  };
+  const parseReleaseDate = (set) =>
+    set.releaseDate ? new Date(set.releaseDate) : new Date("1999-01-09");
 
-  // 📌 Funkce pro řazení všech setů
   const sortAllSets = (setsArray) => {
     if (sortOption === "alphabetical") {
       return setsArray.sort((a, b) => a.name.localeCompare(b.name));
@@ -48,7 +43,6 @@ export default function SetsPage() {
     return setsArray;
   };
 
-  // 📌 Funkce pro řazení sérií (pouze pokud není abecední řazení)
   const sortSeries = (seriesArray) => {
     if (sortOption === "newest") {
       return seriesArray.sort((a, b) => {
@@ -66,13 +60,53 @@ export default function SetsPage() {
     return seriesArray;
   };
 
+  const cardStyle = {
+    width: "140px",
+    height: "180px",
+    border: "1px solid #ddd",
+    padding: "10px",
+    textAlign: "center",
+    cursor: "pointer",
+    borderRadius: "8px",
+    transition: "transform 0.2s ease-in-out, box-shadow 0.2s",
+    backgroundColor: "#fff",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: "center",
+  };
+
+  const containerStyle = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "12px",
+    justifyContent: "flex-start",
+  };
+
+  const handleHover = (e) => {
+    e.currentTarget.style.transform = "scale(1.08)";
+    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+  };
+
+  const handleLeave = (e) => {
+    e.currentTarget.style.transform = "scale(1)";
+    e.currentTarget.style.boxShadow = "none";
+  };
+
+  const goToSet = (id, name) => {
+    router.push(`/sets/${id}?name=${encodeURIComponent(name)}`);
+  };
+
   return (
     <div style={{ padding: "20px" }}>
       <h1>📦 Pokémon Sety</h1>
 
-      {/* 📌 Dropdown pro výběr řazení */}
       <label>Seřadit podle: </label>
-      <select value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
+      <select
+        value={sortOption}
+        onChange={(e) => setSortOption(e.target.value)}
+        style={{ marginBottom: "20px" }}
+      >
         <option value="newest">🆕 Od nejnovějších po nejstarší</option>
         <option value="oldest">📅 Od nejstarších po nejnovější</option>
         <option value="alphabetical">🔤 Abecedně (A-Z)</option>
@@ -80,33 +114,45 @@ export default function SetsPage() {
 
       {loading && <p>⏳ Načítám sety...</p>}
 
-      {/* ✅ Pokud je vybrané abecední řazení, zobrazíme sety bez ohledu na éry */}
       {!loading && sortOption === "alphabetical" && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+        <div style={containerStyle}>
           {sortAllSets(Object.values(sets).flat()).map((set) => (
-            <Link key={set.id} href={`/sets/${set.id}?name=${encodeURIComponent(set.name)}`} passHref>
-              <div style={{ border: "1px solid black", padding: "10px", textAlign: "center", cursor: "pointer" }}>
-                <img src={set.images.logo} alt={set.name} width="100" />
-                <p>{set.name}</p>
-              </div>
-            </Link>
+            <div
+              key={set.id}
+              style={cardStyle}
+              onMouseEnter={handleHover}
+              onMouseLeave={handleLeave}
+              onTouchStart={handleHover}
+              onTouchEnd={handleLeave}
+              onClick={() => goToSet(set.id, set.name)}
+            >
+              <img src={set.images.logo} alt={set.name} style={{ maxWidth: "100%", height: "50px", objectFit: "contain" }} />
+              <p style={{ fontWeight: "bold", fontSize: "14px", margin: "6px 0 4px" }}>{set.name}</p>
+              <img src={set.images.symbol} alt="symbol" width="30" />
+            </div>
           ))}
         </div>
       )}
 
-      {/* ✅ Pokud není abecední řazení, zobrazíme sety seskupené podle série */}
       {!loading && sortOption !== "alphabetical" &&
         sortSeries(Object.keys(sets)).map((series) => (
-          <div key={series} style={{ marginBottom: "20px" }}>
+          <div key={series} style={{ marginBottom: "30px" }}>
             <h2>{series}</h2>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            <div style={containerStyle}>
               {sortAllSets(sets[series]).map((set) => (
-                <Link key={set.id} href={`/sets/${set.id}?name=${encodeURIComponent(set.name)}`} passHref>
-                  <div style={{ border: "1px solid black", padding: "10px", textAlign: "center", cursor: "pointer" }}>
-                    <img src={set.images.logo} alt={set.name} width="100" />
-                    <p>{set.name}</p>
-                  </div>
-                </Link>
+                <div
+                  key={set.id}
+                  style={cardStyle}
+                  onMouseEnter={handleHover}
+                  onMouseLeave={handleLeave}
+                  onTouchStart={handleHover}
+                  onTouchEnd={handleLeave}
+                  onClick={() => goToSet(set.id, set.name)}
+                >
+                  <img src={set.images.logo} alt={set.name} style={{ maxWidth: "100%", height: "50px", objectFit: "contain" }} />
+                  <p style={{ fontWeight: "bold", fontSize: "14px", margin: "6px 0 4px" }}>{set.name}</p>
+                  <img src={set.images.symbol} alt="symbol" width="30" />
+                </div>
               ))}
             </div>
           </div>
