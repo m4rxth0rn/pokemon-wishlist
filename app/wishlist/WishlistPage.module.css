@@ -1,0 +1,153 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap');
+
+.pageBackground {
+  background: linear-gradient(to right, #ffe6f0 0%, #f0eaff 50%, #e0f7ff 100%);
+  min-height: 100vh;
+  font-family: 'Quicksand', sans-serif;
+  padding: 20px;
+}
+
+
+.container {
+  font-family: 'Quicksand', sans-serif;
+  min-height: 100vh;
+  padding: 20px;
+  color: #444;
+  position: relative;
+  z-index: 0;
+}
+
+.title {
+  color: #ff85b3;
+  font-weight: 600;
+  font-size: 26px;
+  margin-bottom: 20px;
+}
+
+/* 🧾 Export button */
+.exportButton {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: 'Quicksand', sans-serif;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(to right, #ffe0f0, #d6f0ff);
+  color: #444;
+  position: relative;
+  z-index: 1000; /* vždy nad kartami */
+}
+
+.exportButton:hover {
+  background: linear-gradient(to right, #fbd3e9, #bbdffb);
+  transform: translateY(-1px);
+}
+
+/* 📦 Mřížka karet */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 20px;
+  align-items: start;
+  position: relative;
+  z-index: 1;
+  overflow: visible;         /* 💡 klíčové pro růst karty */
+  padding-bottom: 60px;      /* 💡 vytvoří prostor pod kartami */
+}
+
+/* 🃏 Styl karty */
+.card {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  transition: transform 0.2s ease, z-index 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 460px;
+  padding: 10px;
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(255, 192, 203, 0.2);
+  cursor: pointer;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.card:hover {
+  transform: scale(1.06);
+  z-index: 10;
+  box-shadow: 0 8px 20px rgba(255, 192, 203, 0.35);
+}
+
+.cardImage {
+  width: 150px;
+  margin-bottom: 8px;
+}
+
+.cardTitle {
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 4px;
+  word-break: break-word;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #e469a0;
+}
+
+.cardSet {
+  font-size: 13px;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #666;
+  word-break: break-word;
+}
+
+/* 📝 Poznámka a tlačítko – pod kartou, zarovnané na střed */
+.noteArea {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 10px;
+  width: 100%;
+  transform: translateY(-6px);
+}
+
+.noteInput {
+  width: 100%;
+  max-width: 160px;
+  padding: 6px 12px;
+  font-size: 13px;
+  background: #fff;
+  border: 1px solid #cba9ff;
+  border-radius: 999px;
+  text-align: center;
+  outline: none;
+  font-family: "Segoe UI", Roboto, sans-serif;
+  box-shadow: inset 0 1px 3px rgba(203, 169, 255, 0.15);
+}
+
+.removeButton {
+  width: 100%;
+  max-width: 160px;
+  background-color: #e74c3c; /* výrazná červená */
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: 'Quicksand', sans-serif;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  text-align: center;
+}
+
+.removeButton:hover {
+  background-color: #c0392b; /* tmavší červená při hoveru */
+  transform: translateY(-1px);
+}

@@ -1,8 +1,14 @@
+import styles from "./Home.module.css";
+
 export default function Home() {
   return (
-    <div style={{ padding: "20px", textAlign: "center" }}>
-      <h1>🏠 Vítej na Pokémon Wishlistu!</h1>
-      <p>Vyber si jednu z možností v navigaci.</p>
+    <div className={styles.pageBackground}>
+      <div className={styles.homeContainer}>
+        <h1 className={styles.homeHeading}>🏠 Vítej na Pokémon Wishlistu!</h1>
+        <p className={styles.homeParagraph}>Vyber si jednu z možností v navigaci.</p>
+      </div>
+
+      <div className={styles.sylveonDecoration}></div>
     </div>
   );
 }

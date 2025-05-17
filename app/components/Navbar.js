@@ -1,8 +1,10 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import supabase from "@/supabase";
+import styles from "./Navbar.module.css"; // Import CSS modulu
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
@@ -26,48 +28,43 @@ export default function Navbar() {
   }, []);
 
   const handleLogin = async () => {
-  sessionStorage.setItem("redirectAfterLogin", window.location.pathname); // ULOŽÍME aktuální URL
+    sessionStorage.setItem("redirectAfterLogin", window.location.pathname);
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/login`,
+      },
+    });
+  };
 
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${window.location.origin}/login`, // Návratová URL BEZ parametru
-    },
-  });
-};
-
-const handleLogout = async () => {
-  await supabase.auth.signOut();
-  window.location.reload();
-
-};
-
-
-
-  
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.reload();
+  };
 
   return (
-    <nav style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      padding: "15px 20px",
-      borderBottom: "2px solid black",
-      backgroundColor: "#f8f8f8"
-    }}>
-      <div style={{ display: "flex", gap: "20px" }}>
-        <Link href="/search">🔍 Hledej karty</Link>
-        <Link href="/sets">📦 Sety</Link>
-         {user && <Link href="/wishlist">📜 Můj wishlist</Link>}
+    <nav className={styles.navbar}>
+      <div className={styles.navbarLinks}>
+        <Link href="/search" legacyBehavior>
+          <a className={styles.navLink}>🔍 Hledej karty</a>
+        </Link>
+        <Link href="/sets" legacyBehavior>
+          <a className={styles.navLink}>📦 Sety</a>
+        </Link>
+        {user && (
+          <Link href="/wishlist" legacyBehavior>
+            <a className={styles.navLink}>📜 Můj wishlist</a>
+          </Link>
+        )}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div className={styles.navbarUser}>
         {user ? (
           <>
-            <span style={{ fontSize: "0.9rem", color: "#333" }}>{user.email}</span>
-            <button onClick={handleLogout}>Odhlásit se</button>
+            <span className={styles.userEmail}>{user.email}</span>
+            <button className={styles.sylveonButton} onClick={handleLogout}>Odhlásit se</button>
           </>
         ) : (
-          <button onClick={handleLogin}>Přihlásit se</button>
+          <button className={styles.sylveonButton} onClick={handleLogin}>Přihlásit se</button>
         )}
       </div>
     </nav>

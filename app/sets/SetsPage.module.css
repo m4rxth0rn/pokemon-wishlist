@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap');
+
+.selectDropdown {
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 2px solid #ffcce7;
+  background-color: #fff0f9;
+  color: #444;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(255, 182, 193, 0.15);
+  transition: all 0.2s ease;
+  max-width: 280px;
+}
+
+.selectDropdown:hover {
+  background-color: #ffeaf6;
+}
+
+.selectDropdown:focus {
+  outline: none;
+  border-color: #ffb6d9;
+  box-shadow: 0 0 0 3px rgba(255, 133, 179, 0.3);
+}
+
+
+
+.pageBackground {
+  background: linear-gradient(to right, #ffe6f0 0%, #f0eaff 50%, #e0f7ff 100%);
+  min-height: 100vh;
+  font-family: 'Quicksand', sans-serif;
+  padding: 20px;
+}
+
+
+
+
+.pageContainer {
+  font-family: 'Quicksand', sans-serif;
+  background: linear-gradient(to bottom right, #fff0f9, #e6f7ff);
+  min-height: 100vh;
+  padding: 24px;
+  color: #444;
+}
+
+.title {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 600;
+  color: #ff85b3;
+  margin-bottom: 24px;
+}
+
+.sortBar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.select {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 2px solid #ffcfe3;
+  background: #ffffff;
+  font-weight: bold;
+  color: #444;
+  transition: 0.3s ease;
+  box-shadow: 0 2px 6px rgba(255, 192, 203, 0.2);
+}
+
+.select:focus {
+  outline: none;
+  border-color: #ffb0d6;
+  box-shadow: 0 0 8px rgba(255, 175, 211, 0.3);
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: flex-start;
+}
+
+.card {
+  width: 140px;
+  height: 180px;
+  background: linear-gradient(to bottom right, #ffe4f0, #ffffff); 
+  border-radius: 20px;
+  padding: 10px;
+  box-shadow: 0 4px 10px rgba(255, 182, 193, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s;
+  border: 2px solid #ffcce6;
+}
+
+.card:hover {
+  transform: scale(1.08);
+  background: linear-gradient(to bottom right, #fff0f9, #ffeef5); 
+  box-shadow: 0 8px 20px rgba(255, 192, 203, 0.35);
+  border-color: #ffb6d9;
+}
+
+
+
+.logo {
+  max-width: 100%;
+  height: 50px;
+  object-fit: contain;
+}
+
+.cardName {
+  font-weight: bold;
+  font-size: 14px;
+  margin: 6px 0 4px;
+  color: #444;
+}
+
+.symbol {
+  width: 30px;
+}
+
+.seriesBlock {
+  margin-bottom: 30px;
+}
+
+.seriesTitle {
+  font-size: 22px;
+  color: #bb85ff;
+  margin-bottom: 10px;
+}

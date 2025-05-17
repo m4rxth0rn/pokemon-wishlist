@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import styles from "./SetsPage.module.css";
 
 export default function SetsPage() {
   const [sets, setSets] = useState([]);
@@ -60,75 +61,43 @@ export default function SetsPage() {
     return seriesArray;
   };
 
-  const cardStyle = {
-    width: "140px",
-    height: "180px",
-    border: "1px solid #ddd",
-    padding: "10px",
-    textAlign: "center",
-    cursor: "pointer",
-    borderRadius: "8px",
-    transition: "transform 0.2s ease-in-out, box-shadow 0.2s",
-    backgroundColor: "#fff",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    alignItems: "center",
-  };
-
-  const containerStyle = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "12px",
-    justifyContent: "flex-start",
-  };
-
-  const handleHover = (e) => {
-    e.currentTarget.style.transform = "scale(1.08)";
-    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-  };
-
-  const handleLeave = (e) => {
-    e.currentTarget.style.transform = "scale(1)";
-    e.currentTarget.style.boxShadow = "none";
-  };
-
   const goToSet = (id, name) => {
     router.push(`/sets/${id}?name=${encodeURIComponent(name)}`);
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>📦 Pokémon Sety</h1>
+    <div className={styles.pageBackground}>
 
-      <label>Seřadit podle: </label>
-      <select
-        value={sortOption}
-        onChange={(e) => setSortOption(e.target.value)}
-        style={{ marginBottom: "20px" }}
-      >
-        <option value="newest">🆕 Od nejnovějších po nejstarší</option>
-        <option value="oldest">📅 Od nejstarších po nejnovější</option>
-        <option value="alphabetical">🔤 Abecedně (A-Z)</option>
-      </select>
+      <h1 className={styles.title}>📦 Pokémon Sety</h1>
+
+      <div className={styles.sortBar}>
+        <label>Seřadit podle: </label>
+        <select
+  className={styles.selectDropdown}
+  value={sortOption}
+  onChange={(e) => setSortOption(e.target.value)}
+>
+  <option value="newest">🆕 Od nejnovějších po nejstarší</option>
+  <option value="oldest">📅 Od nejstarších po nejnovější</option>
+  <option value="alphabetical">🔤 Abecedně (A-Z)</option>
+</select>
+
+          
+      </div>
 
       {loading && <p>⏳ Načítám sety...</p>}
 
       {!loading && sortOption === "alphabetical" && (
-        <div style={containerStyle}>
+        <div className={styles.grid}>
           {sortAllSets(Object.values(sets).flat()).map((set) => (
             <div
               key={set.id}
-              style={cardStyle}
-              onMouseEnter={handleHover}
-              onMouseLeave={handleLeave}
-              onTouchStart={handleHover}
-              onTouchEnd={handleLeave}
+              className={styles.card}
               onClick={() => goToSet(set.id, set.name)}
             >
-              <img src={set.images.logo} alt={set.name} style={{ maxWidth: "100%", height: "50px", objectFit: "contain" }} />
-              <p style={{ fontWeight: "bold", fontSize: "14px", margin: "6px 0 4px" }}>{set.name}</p>
-              <img src={set.images.symbol} alt="symbol" width="30" />
+              <img src={set.images.logo} alt={set.name} className={styles.logo} />
+              <p className={styles.cardName}>{set.name}</p>
+              <img src={set.images.symbol} alt="symbol" className={styles.symbol} />
             </div>
           ))}
         </div>
@@ -136,22 +105,18 @@ export default function SetsPage() {
 
       {!loading && sortOption !== "alphabetical" &&
         sortSeries(Object.keys(sets)).map((series) => (
-          <div key={series} style={{ marginBottom: "30px" }}>
-            <h2>{series}</h2>
-            <div style={containerStyle}>
+          <div key={series} className={styles.seriesBlock}>
+            <h2 className={styles.seriesTitle}>{series}</h2>
+            <div className={styles.grid}>
               {sortAllSets(sets[series]).map((set) => (
                 <div
                   key={set.id}
-                  style={cardStyle}
-                  onMouseEnter={handleHover}
-                  onMouseLeave={handleLeave}
-                  onTouchStart={handleHover}
-                  onTouchEnd={handleLeave}
+                  className={styles.card}
                   onClick={() => goToSet(set.id, set.name)}
                 >
-                  <img src={set.images.logo} alt={set.name} style={{ maxWidth: "100%", height: "50px", objectFit: "contain" }} />
-                  <p style={{ fontWeight: "bold", fontSize: "14px", margin: "6px 0 4px" }}>{set.name}</p>
-                  <img src={set.images.symbol} alt="symbol" width="30" />
+                  <img src={set.images.logo} alt={set.name} className={styles.logo} />
+                  <p className={styles.cardName}>{set.name}</p>
+                  <img src={set.images.symbol} alt="symbol" className={styles.symbol} />
                 </div>
               ))}
             </div>

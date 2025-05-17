@@ -1,0 +1,131 @@
+.pageBackground {
+  background: linear-gradient(to right, #ffe6f0 0%, #f0eaff 50%, #e0f7ff 100%);
+  min-height: 100vh;
+  font-family: 'Quicksand', sans-serif;
+  padding: 20px;
+}
+
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* bylo 140px → zvětšíme */
+  gap: 20px;
+  justify-items: center;
+  align-items: start;
+  padding: 10px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+
+.card {
+  background: #ffffff; 
+  color: #111;
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(255, 192, 203, 0.2);
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cardHover:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(255, 192, 203, 0.4);
+}
+
+.cardImage {
+  display: block;
+  margin: 0 auto 10px;
+  border-radius: 12px;
+}
+ 
+
+.cardName {
+  font-weight: bold;
+  font-size: 15px;
+  line-height: 1.2;
+  min-height: 40px;
+  padding: 0 4px;
+  word-break: break-word;
+  margin-bottom: 5px;
+  color: #e469a0; 
+}
+
+
+
+.cardInfo {
+  font-size: 13px;
+  min-height: 32px;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.cardPrice {
+  font-size: 13px;
+  margin-bottom: 10px;
+  color: #444;
+}
+
+.buttonBase {
+  width: 140px;
+  border: none;
+  border-radius: 30px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.add {
+  background: #28a745; /* zelená */
+  color: #ffffff;
+}
+
+.add:hover {
+  background: #218838;
+}
+
+/* Wishlist - základní stav */
+.onWishlist {
+  background: #c8facc; /* světle zelená */
+  color: #111;
+}
+
+/* Wishlist - hover stav */
+.onWishlist:hover {
+  background: #e74c3c; /* červená */
+  color: #fff;
+}
+
+
+.link {
+  color: #ff85b3;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .cardName {
+    font-size: 13px;
+  }
+
+  .buttonBase {
+    width: 100%;
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+
+  .grid {
+    padding: 0;
+    gap: 8px;
+  }
+}

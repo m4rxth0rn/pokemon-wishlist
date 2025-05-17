@@ -1,0 +1,198 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap');
+
+.selectDropdown {
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 16px;
+  border-radius: 30px;
+  border: 2px solid #ffcce7;
+  background-color: #fff0f9;
+  color: #444;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(255, 182, 193, 0.15);
+  transition: all 0.25s ease-in-out;
+}
+
+.selectDropdown:hover {
+  background-color: #ffe6f5;
+  box-shadow: 0 6px 12px rgba(255, 182, 193, 0.25);
+}
+
+.selectDropdown:focus {
+  outline: none;
+  border-color: #ff85b3;
+  box-shadow: 0 0 0 2px rgba(255, 133, 179, 0.4);
+}
+
+
+
+
+
+.pageBackground {
+  background: linear-gradient(to right, #ffe6f0 0%, #f0eaff 50%, #e0f7ff 100%);
+  min-height: 100vh;
+  font-family: 'Quicksand', sans-serif;
+  padding: 20px;
+}
+
+
+
+
+
+.container {
+  font-family: 'Quicksand', sans-serif;
+  padding: 20px;
+  background: linear-gradient(135deg, #ffe4f7, #d8f3ff);
+  color: #444;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+@media screen and (min-width: 768px) {
+  .container {
+    justify-content: center;
+  }
+}
+
+.backButton,
+.shareButton,
+.modalCloseButton,
+.cardNavButton {
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 600;
+  border: none;
+  border-radius: 30px;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: #fce4ff;
+  color: #444;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.25s ease-in-out;
+  margin: 4px;
+}
+
+.backButton:hover,
+.shareButton:hover,
+.modalCloseButton:hover,
+.cardNavButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.wishlistButton {
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 600;
+  border: none;
+  border-radius: 30px;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease-in-out;
+  margin: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.add {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.added {
+  background-color: #c8facc;
+  color: #111;
+}
+
+.remove {
+  background-color: #e74c3c;
+  color: #fff;
+}
+
+.wishlistButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+
+.cardImage {
+  width: 300px;
+  cursor: pointer;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modalContent {
+  position: relative;
+  animation: slideUp 0.3s ease-in-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modalImage {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 16px;
+}
+
+.modalCloseButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.cardNavButton:disabled {
+  background: #eee;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.cardList {
+  padding-left: 20px;
+}
+
+.cardListItem {
+  margin-bottom: 4px;
+}
