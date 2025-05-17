@@ -33,7 +33,7 @@
   max-width: 500px;
   margin: 0 auto;
 }
-
+@media (max-width: 768px) {
 .sylveonDecoration {
   position: fixed;
   bottom: 0;
@@ -48,4 +48,4 @@
   pointer-events: none;
   z-index: 100;
 }
-
+}

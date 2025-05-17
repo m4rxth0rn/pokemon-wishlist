@@ -7,7 +7,7 @@ export default function RootLayout({ children }) {
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=1024" />
-        <title>Moje stránka</title>
+        <title>Pokélist</title>
       </head>
       <body>
         <Navbar />
