@@ -20,15 +20,28 @@ export default function CardDetailPage() {
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState(new Set());
+  const [user, setUser] = useState(null);
   const [hoverRemove, setHoverRemove] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const modalRef = useRef();
   const [copied, setCopied] = useState(false);
-  const fetchWishlist = async () => {
-    const { data } = await supabase.from("wishlist").select("id");
-    setWishlist(new Set(data.map((c) => c.id)));
-  };
+    
+const fetchWishlist = async (userId) => {
+  if (!userId) return;
+      const { data, error } = await supabase 
+    .from("wishlist") 
+    .select("card_id")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("❌ Chyba při načítání wishlistu:", error);
+    return;
+  }
+
+  setWishlist(new Set(data.map((c) => c.card_id))); 
+};
+
 
   const fetchCard = async (id) => {
     setLoading(true);
@@ -43,52 +56,68 @@ export default function CardDetailPage() {
   };
 
 const addToWishlist = async () => {
-  if (!card || !card.id || !card.images?.small) {
-    console.error("❌ Karta není načtená správně:", card);
+  if (!user || !user.id || !card || !card.id || !card.images?.small) {
+    console.warn("⚠️ Nelze přidat na wishlist – uživatel nebo karta chybí.");
     return;
   }
 
   const wishlistItem = {
-    id: String(card.id),
+    card_id: String(card.id),
     name: String(`${card.name?.split("|")[0].trim()} | ${card.set.name} ${card.number}/${card.set.printedTotal}`),
     image: String(card.images.small),
     number: String(card.number),
     set: String(card.set.name),
     releaseDate: String(card.set.releaseDate || "9999-12-31"),
+    user_id: user.id,
   };
 
-  console.log("🔍 Připraveno k uložení:", wishlistItem);
-
   try {
-    const { error } = await supabase
-      .from("wishlist")
-      .upsert([wishlistItem], { onConflict: "id" });
-
-    if (error && Object.keys(error).length > 0) {
-      console.error("❌ Supabase chyba:", error);
+  const { error } = await supabase
+ .from("wishlist") 
+.insert([wishlistItem]);
+    if (error) {
+      console.error("❌ Supabase chyba:", error.message || error);
     } else {
-      console.log("✅ Přidáno na wishlist:", wishlistItem);
-      fetchWishlist();
+      console.log("✅ Přidáno na wishlist:");
+      await fetchWishlist(user.id);
     }
   } catch (e) {
-    console.error("❌ Výjimka při ukládání:", e);
+    console.error("❌ Výjimka při ukládání:", e.message || e);
   }
 };
 
-  const removeFromWishlist = async () => {
-    if (!card) return;
-    try {
-      await supabase.from("wishlist").delete().eq("id", card.id);
-      fetchWishlist();
-    } catch (error) {
-      console.error("Chyba při odebrání z wishlistu:", error);
+const removeFromWishlist = async () => {
+  if (!user || !user.id || !card?.id) {
+    console.warn("⚠️ Nelze odebrat z wishlistu – uživatel nebo karta chybí.");
+    return;
+  }
+
+  try {
+    await supabase
+      .from("wishlist")
+      .delete()
+      .eq("card_id", card.id)
+      .eq("user_id", user.id);
+
+    await fetchWishlist(user.id);
+  } catch (error) {
+    console.error("Chyba při odebrání z wishlistu:", error);
+  }
+};
+
+  
+
+useEffect(() => {
+  const fetchUserAndWishlist = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      setUser(session.user);
+      await fetchWishlist(session.user.id);
     }
   };
+  fetchUserAndWishlist();
+}, []);
 
-
-  useEffect(() => {
-    fetchWishlist();
-  }, []);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
@@ -221,7 +250,7 @@ const addToWishlist = async () => {
 >
   {copied ? "📋 Odkaz zkopírován" : "📋 Sdílet"}
 </button>
-
+        {user && (
       <button onClick={() => (btnInWishlist ? removeFromWishlist() : addToWishlist())}
   onMouseEnter={() => { if (!isMobile) setHoverRemove(true); }}
   onMouseLeave={() => { if (!isMobile) setHoverRemove(false); }}
@@ -250,7 +279,7 @@ const addToWishlist = async () => {
     ? "❌ Odebrat z wishlistu"
     : "✅ Karta je na wishlistu"}
 </button>
-
+)}
 
 
 

@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.6.2",
+    "@fingerprintjs/fingerprintjs-pro": "^3.11.9",
     "@supabase/supabase-js": "^2.49.1",
     "axios": "^1.8.1",
     "file-saver": "^2.0.5",

@@ -1,73 +1,108 @@
 "use client";
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import supabase from "@/supabase";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
-export default function Wishlist() {
+export default function WishlistPage() {
   const [wishlist, setWishlist] = useState([]);
+  const debounceTimers = useRef({});
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchWishlist = async () => {
-      setLoading(true);
-      try {
-        const { data } = await supabase.from("wishlist").select("*");
-        if (!data) return;
-
-        const enriched = await Promise.all(
-          data.map(async (item) => {
-            try {
-              const res = await axios.get(
-                `https://api.pokemontcg.io/v2/cards/${item.id}?include=tcgplayer`
-              );
-              return { ...item, card: res.data.data };
-            } catch {
-              return { ...item, card: null };
-            }
-          })
-        );
-
-        const filtered = enriched.filter((item) => item.card !== null);
-
-        const sorted = filtered.sort((a, b) => {
-          const dateA = new Date(a.card.set.releaseDate);
-          const dateB = new Date(b.card.set.releaseDate);
-          if (dateA > dateB) return -1;
-          if (dateA < dateB) return 1;
-
-          const numA = parseInt(a.card.number.replace(/\D/g, ""), 10);
-          const numB = parseInt(b.card.number.replace(/\D/g, ""), 10);
-          return numB - numA;
-        });
-
-        setWishlist(sorted);
-      } catch (err) {
-        console.error("Chyba při načítání wishlistu:", err.message);
-      } finally {
-        setLoading(false);
+    const fetchUserAndWishlist = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        await loadWishlist(session.user.id);
       }
+      setLoading(false);
     };
 
-    fetchWishlist();
+    fetchUserAndWishlist();
 
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  }, [router]);
 
-  const removeFromWishlist = async (id) => {
-    const { error } = await supabase.from("wishlist").delete().eq("id", id);
-    if (!error) {
-      setWishlist((prev) => prev.filter((item) => item.id !== id));
-    }
-  };
+  const loadWishlist = async (userId) => {
+  const { data: wishlistData } = await supabase
+    .from("wishlist")
+    .select("*")
+    .eq("user_id", userId);
+
+  if (!wishlistData) return;
+
+  const enriched = await Promise.all(
+    wishlistData.map(async (item) => {
+      try {
+        const res = await axios.get(
+          `https://api.pokemontcg.io/v2/cards/${item.card_id}?include=tcgplayer`
+        );
+        return { ...item, card: res.data.data };
+      } catch {
+        return { ...item, card: null };
+      }
+    })
+  );
+
+  const filtered = enriched.filter((item) => item.card !== null);
+  const sorted = filtered.sort((a, b) => {
+    const dateA = new Date(a.card.set.releaseDate);
+    const dateB = new Date(b.card.set.releaseDate);
+    if (dateA > dateB) return -1;
+    if (dateA < dateB) return 1;
+
+    const numA = parseInt(a.card.number.replace(/\D/g, ""), 10);
+    const numB = parseInt(b.card.number.replace(/\D/g, ""), 10);
+    return numB - numA;
+  });
+
+  setWishlist(sorted);
+};
+
+const removeFromWishlist = async (cardId) => {
+  const { error } = await supabase
+    .from("wishlist")
+    .delete()
+    .eq("card_id", cardId)
+    .eq("user_id", user.id);
+  if (!error) {
+    setWishlist((prev) => prev.filter((item) => item.card_id !== cardId));
+  }
+};
+
+  
+const updateNote = async (cardId, note) => {
+  await supabase
+    .from("wishlist")
+    .update({ note })
+    .eq("card_id", cardId)
+    .eq("user_id", user.id);
+};
+
+const handleNoteChange = (cardId, note) => {
+  setWishlist((prev) =>
+    prev.map((item) =>
+      item.card_id === cardId ? { ...item, note } : item
+    )
+  );
+
+  clearTimeout(debounceTimers.current[cardId]);
+  debounceTimers.current[cardId] = setTimeout(() => {
+    updateNote(cardId, note);
+  }, 1000);
+};
+
+
+  
 
   const exportToExcel = () => {
     const exportData = wishlist.map((item) => ({
@@ -87,7 +122,7 @@ export default function Wishlist() {
       const imageUrl = item.card?.images?.small || item.image || "";
       const cellAddress = `${imageColumn}${index + 2}`;
       worksheet[cellAddress] = {
-        f: `HYPERLINK("${imageUrl}", "Obrázek")`,
+        f: `HYPERLINK(\"${imageUrl}\", \"Obrázek\")`,
       };
     });
 
@@ -100,8 +135,8 @@ export default function Wishlist() {
   };
 
   const handleCardClick = (cardId) => {
-    const index = wishlist.findIndex((item) => item.id === cardId);
-    const ids = wishlist.map((item) => item.id).join(",");
+    const index = wishlist.findIndex((item) => item.card_id === cardId);
+    const ids = wishlist.map((item) => item.card_id).join(",");
     const setId = wishlist[index]?.card?.set?.id || "unknown";
     router.push(`/sets/${setId}/cards/${cardId}?from=wishlist&ids=${ids}&index=${index}`);
   };
@@ -110,25 +145,29 @@ export default function Wishlist() {
     <div style={{ padding: "20px" }}>
       <h1>📜 Můj Wishlist</h1>
 
-      <button
-        onClick={exportToExcel}
-        style={{
-          marginBottom: "20px",
-          padding: "10px 16px",
-          backgroundColor: "#4CAF50",
-          color: "white",
-          border: "none",
-          borderRadius: "5px",
-          cursor: "pointer",
-        }}
-      >
-        📁 Exportovat do Excelu
-      </button>
+      {user && (
+        <button
+          onClick={exportToExcel}
+          style={{
+            marginBottom: "20px",
+            padding: "10px 16px",
+            backgroundColor: "#4CAF50",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          📁 Exportovat do Excelu
+        </button>
+      )}
 
       {loading ? (
         <p>⏳ Načítám wishlist...</p>
+      ) : !user ? (
+        <p>❌ Wishlist je dostupný pouze po přihlášení.</p>
       ) : wishlist.length === 0 ? (
-        <p>😢 Wishlist je prázdný.</p>
+        <p>😥 Wishlist je prázdný.</p>
       ) : (
         <div
           style={{
@@ -139,7 +178,7 @@ export default function Wishlist() {
         >
           {wishlist.map((item, index) => (
             <div
-              key={item.id}
+              key={item.card_id}
               style={{
                 textAlign: "center",
                 cursor: "pointer",
@@ -153,12 +192,12 @@ export default function Wishlist() {
                 borderRadius: "8px",
                 boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
               }}
-              onClick={() => handleCardClick(item.id)}
+              onClick={() => handleCardClick(item.card_id)}
               onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.08)")}
               onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
               <div>
-                <img src={item.image} alt={item.card?.name} width="150" style={{ marginBottom: "8px" }} />
+                <img src={item.card?.images?.small || item.image} alt={item.card?.name} width="150" style={{ marginBottom: "8px" }} />
                 <p style={{
                   fontWeight: "bold",
                   fontSize: isMobile ? "13px" : "15px",
@@ -173,7 +212,7 @@ export default function Wishlist() {
                   fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
                   wordBreak: "break-word"
                 }}>
-                  {item.card?.set?.name} {item.card?.number}/{item.card?.set?.total}
+                  {item.card?.set?.name} {item.card?.number}/{item.card?.set?.printedTotal}
                 </p>
               </div>
 
@@ -189,23 +228,8 @@ export default function Wishlist() {
                   <input
                     type="text"
                     placeholder="Poznámka"
-                    value={typeof item.note === "string" ? item.note : ""}
-                    onChange={(e) => {
-                      const newNote = e.target.value;
-                      setWishlist((prev) =>
-                        prev.map((w, i) => (i === index ? { ...w, note: newNote } : w))
-                      );
-                    }}
-                    onBlur={async (e) => {
-                      const newNote = e.target.value;
-                      const { error } = await supabase
-                        .from("wishlist")
-                        .update({ note: newNote || null })
-                        .eq("id", item.id);
-                      if (error) {
-                        console.error("Chyba při ukládání poznámky:", error.message);
-                      }
-                    }}
+                    value={item.note || ""}
+                    onChange={(e) => handleNoteChange(item.card_id, e.target.value)}
                     style={{
                       width: "100%",
                       padding: "6px",
@@ -218,43 +242,16 @@ export default function Wishlist() {
                       fontFamily: '"Segoe UI", Roboto, sans-serif'
                     }}
                   />
-                  {!!item.note?.trim() && (
-                    <button
-                      title="Odstranit poznámku"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        const { error } = await supabase
-                          .from("wishlist")
-                          .update({ note: null })
-                          .eq("id", item.id);
-                        if (!error) {
-                          setWishlist((prev) =>
-                            prev.map((w, i) => (i === index ? { ...w, note: "" } : w))
-                          );
-                        }
-                      }}
-                      style={{
-                        backgroundColor: "#fff",
-                        border: "1px solid #ddd",
-                        color: "#c2185b",
-                        fontSize: "14px",
-                        borderRadius: "50%",
-                        padding: "2px 6px",
-                        cursor: "pointer",
-                        lineHeight: "1",
-                        height: "26px"
-                      }}
-                    >
-                      ✖
-                    </button>
-                  )}
                 </div>
 
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFromWishlist(item.id);
-                  }}
+  type="button"
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    removeFromWishlist(item.card_id);
+  }}
+
                   style={{
                     width: "140px",
                     backgroundColor: "#ff4444",
