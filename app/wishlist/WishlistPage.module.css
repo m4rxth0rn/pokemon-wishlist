@@ -24,7 +24,7 @@
   margin-bottom: 20px;
 }
 
-/* 🧾 Export button */
+
 .exportButton {
   padding: 6px 14px;
   font-size: 13px;
@@ -38,7 +38,7 @@
   background: linear-gradient(to right, #ffe0f0, #d6f0ff);
   color: #444;
   position: relative;
-  z-index: 1000; /* vždy nad kartami */
+  z-index: 1000; 
 }
 
 .exportButton:hover {
@@ -46,19 +46,20 @@
   transform: translateY(-1px);
 }
 
-/* 📦 Mřížka karet */
+
 .cardGrid {
   display: grid;
+  justify-items: center;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 20px;
   align-items: start;
   position: relative;
   z-index: 1;
-  overflow: visible;         /* 💡 klíčové pro růst karty */
-  padding-bottom: 60px;      /* 💡 vytvoří prostor pod kartami */
+  overflow: visible;         
+  padding-bottom: 60px;      
 }
 
-/* 🃏 Styl karty */
+
 .card {
   position: relative;
   z-index: 1;
@@ -104,7 +105,7 @@
   word-break: break-word;
 }
 
-/* 📝 Poznámka a tlačítko – pod kartou, zarovnané na střed */
+
 .noteArea {
   margin-top: auto;
   display: flex;
@@ -134,7 +135,7 @@
 .removeButton {
   width: 100%;
   max-width: 160px;
-  background-color: #e74c3c; /* výrazná červená */
+  background-color: #e74c3c; 
   color: white;
   border: none;
   border-radius: 999px;
@@ -148,6 +149,6 @@
 }
 
 .removeButton:hover {
-  background-color: #c0392b; /* tmavší červená při hoveru */
+  background-color: #c0392b; 
   transform: translateY(-1px);
 }
